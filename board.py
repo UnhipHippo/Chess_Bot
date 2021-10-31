@@ -1,6 +1,7 @@
 import sys, pygame
 import math
 import chess
+import chess.engine
 
 pygame.init()
 
@@ -42,60 +43,45 @@ chess_board_surface.fill(white)
 for chess_rect in rect_list:
     pygame.draw.rect(chess_board_surface, black, chess_rect)
 
-"""
-for square in FEN:
-    if square is "p":
-        image = pygame.image.load("/home/sam/Documents/My_project/pieces/bP.jpg")
-        screen.blit(image, (x, y))
-    if square is "/":
-        y+=width
-    else:
-        x+=width"""
+
 move = ""
 
 while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            sys.exit()
-        elif event.type == pygame.MOUSEBUTTONDOWN:
-            pos = event.pos
-            x = math.floor(pos[0] / width)
-            y = math.floor(pos[1] / width)
-            if move == (letters[x]+str(num_rows-y)):
-                move = ""
-            else:
-                move = move +letters[x]+str(num_rows-y)
-            if(len(move)>=4):
-                if chess.Move.from_uci(move) in board.legal_moves:
-                    board.push_san(move)
+    if board.turn:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit()
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                pos = event.pos
+                x = math.floor(pos[0] / width)
+                y = math.floor(pos[1] / width)
+                if move == (letters[x]+str(num_rows-y)):
                     move = ""
-                else:
-                    move = move[-2:]
-            original_color = chess_board_surface.get_at((x * width, y * width))
-            pygame.draw.rect(chess_board_surface, highlight, pygame.Rect((x) * width, (y) * width, width, width))
-        if event.type == pygame.MOUSEBUTTONUP:
-            x = math.floor(pos[0] / width)
-            y = math.floor(pos[1] / width)
-            pygame.draw.rect(chess_board_surface, original_color, pygame.Rect((x) * width, (y) * width, width, width))
+                move = move +letters[x]+str(num_rows-y)
+                if(len(move)>=4):
+                    if chess.Move.from_uci(move) in board.legal_moves:
+                        board.push_san(move)
+                        move = ""
+                    else:
+                        move = move[-2:]
+                original_color = chess_board_surface.get_at((x * width, y * width))
+                pygame.draw.rect(chess_board_surface, highlight, pygame.Rect((x) * width, (y) * width, width, width))
+            if event.type == pygame.MOUSEBUTTONUP:
+                x = math.floor(pos[0] / width)
+                y = math.floor(pos[1] / width)
+                pygame.draw.rect(chess_board_surface, original_color, pygame.Rect((x) * width, (y) * width, width, width))
+    else:
+        engine = chess.engine.SimpleEngine.popen_uci("stockfish")
+
+        limit = chess.engine.Limit(time=2.0)
+        board.push_san(str(engine.play(board, limit).move))
+        engine.quit()
 
     # displayed the chess surface
     screen.blit(chess_board_surface, (0, 0))
     x=0
     y=0
-    """
-    p = pygame.image.load("/home/sam/Documents/My_project/pieces/bP.png")
-    b = pygame.image.load("/home/sam/Documents/My_project/pieces/bB.png")
-    k = pygame.image.load("/home/sam/Documents/My_project/pieces/bK.png")
-    n = pygame.image.load("/home/sam/Documents/My_project/pieces/bN.png")
-    q = pygame.image.load("/home/sam/Documents/My_project/pieces/bQ.png")
-    r = pygame.image.load("/home/sam/Documents/My_project/pieces/bR.png")
-    P = pygame.image.load("/home/sam/Documents/My_project/pieces/wP.png")
-    B = pygame.image.load("/home/sam/Documents/My_project/pieces/wB.png")
-    K = pygame.image.load("/home/sam/Documents/My_project/pieces/wK.png")
-    N = pygame.image.load("/home/sam/Documents/My_project/pieces/wN.png")
-    Q = pygame.image.load("/home/sam/Documents/My_project/pieces/wQ.png")
-    R = pygame.image.load("/home/sam/Documents/My_project/pieces/wR.png")
-    """
+
     FEN = board.fen()
     for square in FEN:
         if square is " ":
@@ -110,6 +96,16 @@ while True:
             image = pygame.transform.scale(image, (width, width))
             screen.blit(image, (x, y))
             x += width
+
+
+    if board.outcome() is not None:
+        font = pygame.font.Font(None, 100)
+        if board.turn:
+            text = font.render("Black wins!", True, [0,0,0])
+        else:
+            text = font.render("White wins!", True, [255, 255, 255])
+        text_rect = text.get_rect(center=(size / 2, size/ 2))
+        screen.blit(text, text_rect)
 
 
 
