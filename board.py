@@ -2,6 +2,7 @@ import sys, pygame
 import math
 import chess
 import chess.engine
+import bot
 
 pygame.init()
 
@@ -48,6 +49,7 @@ move = ""
 
 while True:
     if board.turn:
+    #if True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 sys.exit()
@@ -61,6 +63,7 @@ while True:
                 if(len(move)>=4):
                     if chess.Move.from_uci(move) in board.legal_moves:
                         board.push_san(move)
+                        #print(bot.evaluate(board))
                         move = ""
                     else:
                         move = move[-2:]
@@ -70,12 +73,13 @@ while True:
                 x = math.floor(pos[0] / width)
                 y = math.floor(pos[1] / width)
                 pygame.draw.rect(chess_board_surface, original_color, pygame.Rect((x) * width, (y) * width, width, width))
-    else:
-        engine = chess.engine.SimpleEngine.popen_uci("stockfish")
+    elif board.outcome() is None:
+        #engine = chess.engine.SimpleEngine.popen_uci("stockfish")
 
-        limit = chess.engine.Limit(time=2.0)
-        board.push_san(str(engine.play(board, limit).move))
-        engine.quit()
+        #limit = chess.engine.Limit(time=2.0)
+        #board.push_san(str(engine.play(board, limit).move))
+        #engine.quit()
+        board.push_san(bot.bestMove(2, board))
 
     # displayed the chess surface
     screen.blit(chess_board_surface, (0, 0))
